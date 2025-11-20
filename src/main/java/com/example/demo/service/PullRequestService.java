@@ -61,6 +61,81 @@ public class PullRequestService {
         return mapToResponse(pr);
     }
 
+    @Transactional
+    public PullRequestResponse mergePullRequest(UUID prId) {
+        PullRequest pr = pullRequestRepository.findById(prId)
+                .orElseThrow(() -> new IllegalArgumentException("PR not found: " + prId));
+
+        if (pr.getStatus() == PullRequest.Status.MERGED) {
+            return mapToResponse(pr);
+        }
+
+        pr.setStatus(PullRequest.Status.MERGED);
+        pullRequestRepository.save(pr);
+
+        return mapToResponse(pr);
+    }
+
+    @Transactional
+    public PullRequestResponse reassignReviewer(UUID prId, UUID oldReviewerId) {
+        PullRequest pr = pullRequestRepository.findById(prId)
+                .orElseThrow(() -> new IllegalArgumentException("PR not found: " + prId));
+
+        if (pr.getStatus() == PullRequest.Status.MERGED) {
+            throw new IllegalStateException("Cannot reassign reviewers for MERGED PR");
+        }
+
+        ReviewerAssignment existing = reviewerAssignmentRepository
+                .findByPullRequest_IdAndReviewer_Id(prId, oldReviewerId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Assignment not found for given PR and reviewer"
+                ));
+
+        User oldReviewer = existing.getReviewer();
+        UUID teamId = oldReviewer.getTeam().getId();
+
+        Set<UUID> alreadyAssignedIds = reviewerAssignmentRepository.findByPullRequest_Id(prId).stream()
+                .map(a -> a.getReviewer().getId())
+                .collect(Collectors.toSet());
+
+        List<User> candidates = userRepository.findByTeam_Id(teamId).stream()
+                .filter(User::isActive)
+                .filter(u -> !u.getId().equals(oldReviewerId))
+                .filter(u -> !alreadyAssignedIds.contains(u.getId()))
+                .toList();
+
+        if (candidates.isEmpty()) {
+            throw new IllegalStateException("No available candidates in reviewer's team for reassignment");
+        }
+
+        User newReviewer = candidates.get(random.nextInt(candidates.size()));
+        existing.setReviewer(newReviewer);
+        reviewerAssignmentRepository.save(existing);
+
+        return mapToResponse(pr);
+    }
+
+
+    @Transactional
+    public List<PullRequestResponse> getPullRequestsForReviewer(UUID reviewerId) {
+        userRepository.findById(reviewerId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + reviewerId));
+
+        List<ReviewerAssignment> assignments =
+                reviewerAssignmentRepository.findByReviewer_Id(reviewerId);
+
+        Map<UUID, PullRequest> prById = new LinkedHashMap<>();
+        for (ReviewerAssignment a : assignments) {
+            PullRequest pr = a.getPullRequest();
+            prById.putIfAbsent(pr.getId(), pr);
+        }
+
+        return prById.values().stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+
     private List<User> pickRandomReviewers(List<User> candidates, int maxCount){
         if (candidates.isEmpty() || maxCount <= 0){
             return List.of();
