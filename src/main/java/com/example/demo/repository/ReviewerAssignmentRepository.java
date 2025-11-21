@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 public interface ReviewerAssignmentRepository extends JpaRepository<ReviewerAssignment, UUID>{
     List<ReviewerAssignment> findByReviewer_Id(UUID reviewerId);
@@ -14,4 +15,5 @@ public interface ReviewerAssignmentRepository extends JpaRepository<ReviewerAssi
 
     boolean existsByPullRequest_IdAndReviewer_Id(UUID pullRequestId, UUID reviewerId);
 
+    Optional<ReviewerAssignment> findByPullRequest_IdAndReviewer_Id(UUID pullRequestId, UUID reviewerId);
 }
