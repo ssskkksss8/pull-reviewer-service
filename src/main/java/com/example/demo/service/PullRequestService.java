@@ -139,6 +139,13 @@ public class PullRequestService {
                 .toList();
     }
 
+    public PullRequestResponse getById(UUID id) {
+        PullRequest pr = pullRequestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("PR not found: " + id));
+
+        return mapToResponse(pr);
+    }
+
 
     private List<User> pickRandomReviewers(List<User> candidates, int maxCount){
         if (candidates.isEmpty() || maxCount <= 0){
