@@ -30,6 +30,7 @@
 ### Команда запуска
 ```bash
 docker-compose up --build
+```
 ## Список эндпоинтов сервиса
 
 ### Users API
