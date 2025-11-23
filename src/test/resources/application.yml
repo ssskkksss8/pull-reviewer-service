@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5555/prreviewer
+    username: pruser
+    password: prpass
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.lob.non_contextual_creation: true
+
+  flyway:
+    enabled: true
+
+server:
+  port: 0

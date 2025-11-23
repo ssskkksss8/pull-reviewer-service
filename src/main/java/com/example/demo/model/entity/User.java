@@ -3,28 +3,24 @@ package com.example.demo.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
-@Table(name="users")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
-
 public class User {
     @Id
-    @GeneratedValue
-    private UUID id;
-
+    private String userId;
 
     @Column(nullable = false)
-    private String name;
+    private String username;
 
-    @Column(name= "is_active", nullable = false)
-    private boolean isActive;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="team_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "team_name", nullable = false)
     private Team team;
 
-
+    @Column(nullable = false)
+    private boolean isActive;
 }

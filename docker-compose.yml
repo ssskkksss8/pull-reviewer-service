@@ -1,30 +1,25 @@
+version: "3.9"
 services:
   db:
-    image: postgres:16-alpine
-    container_name: prreviewer-db
+    image: postgres:16
+    container_name: pr-postgres
     environment:
-      POSTGRES_DB: prreviewer
-      POSTGRES_USER: pruser
-      POSTGRES_PASSWORD: prpass
+      POSTGRES_DB: pr_service
+      POSTGRES_USER: pr_user
+      POSTGRES_PASSWORD: pr_pass
     ports:
       - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pr_user -d pr_service"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   app:
-    container_name: prreviewer-app
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
+    container_name: pr-app
     depends_on:
-      - db
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/prreviewer
-      SPRING_DATASOURCE_USERNAME: pruser
-      SPRING_DATASOURCE_PASSWORD: prpass
-      SERVER_PORT: 8080
+      db:
+        condition: service_healthy
     ports:
       - "8080:8080"
-
-volumes:
-  db_data:

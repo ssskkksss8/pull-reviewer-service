@@ -1,48 +1,49 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.dto.UpdateUserActivityRequest;
-import com.example.demo.model.dto.UserCreateRequest;
-import com.example.demo.model.dto.UserResponse;
-import com.example.demo.service.UserService;
+import com.example.demo.model.dto.SetIsActiveRequest;
+import com.example.demo.model.entity.PullRequest;
+import com.example.demo.model.entity.User;
+import com.example.demo.service.AssignmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final AssignmentService service;
 
-    @PostMapping
-    public UserResponse createUser(@Valid @RequestBody UserCreateRequest request) {
-        return userService.createUser(request);
+    @PostMapping("/users/setIsActive")
+    public Map<String, Object> setIsActive(@Valid @RequestBody SetIsActiveRequest req) {
+        User u = service.setIsActive(req.getUserId(), req.isActive());
+        return Map.of("user", Map.of(
+                "user_id", u.getUserId(),
+                "username", u.getUsername(),
+                "team_name", u.getTeam().getTeamName(),
+                "is_active", u.isActive()
+        ));
     }
 
-    @GetMapping("/{id}")
-    public UserResponse getUser(@PathVariable UUID id) {
-        return userService.getUser(id);
-    }
+    @GetMapping("/users/getReview")
+    public Map<String, Object> getReview(@RequestParam("user_id") String userId) {
+        List<PullRequest> prs = service.getPrsForReviewer(userId);
 
-    @GetMapping
-    public List<UserResponse> getAllUsers() {
-        return userService.getAllUsers();
-    }
+        List<Map<String, Object>> shortPrs = prs.stream()
+                .map(pr -> Map.of(
+                        "pull_request_id", pr.getPullRequestId(),
+                        "pull_request_name", pr.getPullRequestName(),
+                        "author_id", pr.getAuthor().getUserId(),
+                        "status", pr.getStatus().name()
+                ))
+                .toList();
 
-    @GetMapping("/by-team/{teamId}")
-    public List<UserResponse> getUsersByTeam(@PathVariable UUID teamId) {
-        return userService.getUsersByTeam(teamId);
-    }
-
-    @PatchMapping("/{id}/activity")
-    public UserResponse updateUserActivity(
-            @PathVariable UUID id,
-            @RequestBody UpdateUserActivityRequest request
-    ) {
-        return userService.updateUserActivity(id, request);
+        return Map.of(
+                "user_id", userId,
+                "pull_requests", shortPrs
+        );
     }
 }

@@ -1,15 +1,20 @@
+server:
+  port: 8080
+
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: jdbc:postgresql://db:5432/pr_service
+    username: pr_user
+    password: pr_pass
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
     properties:
-      hibernate.jdbc.lob.non_contextual_creation: true
+      hibernate:
+        jdbc:
+          time_zone: UTC
   flyway:
     enabled: true
-
-server:
-  port: ${SERVER_PORT:8080}
+    locations: classpath:db/migration

@@ -1,15 +1,12 @@
 package com.example.demo.service;
 
-import com.example.demo.model.dto.UpdateUserActivityRequest;
-import com.example.demo.model.dto.UserCreateRequest;
 import com.example.demo.model.dto.UserResponse;
-import com.example.demo.model.entity.Team;
 import com.example.demo.model.entity.User;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,37 +18,23 @@ public class UserService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
 
-    @Transactional
-    public UserResponse createUser(UserCreateRequest request) {
-        Team team = teamRepository.findById(request.getTeamId())
-                .orElseThrow(() -> new IllegalArgumentException("Team not found: " + request.getTeamId()));
-
-        User user = User.builder()
-                .name(request.getName())
-                .isActive(true)
-                .team(team)
-                .build();
-
-        User saved = userRepository.save(user);
-        return mapToResponse(saved);
-    }
-
-    @Transactional
+    @Transactional(readOnly = true)
     public UserResponse getUser(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
         return mapToResponse(user);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<UserResponse> getUsersByTeam(UUID teamId) {
-        List<User> users = userRepository.findByTeam_Id(teamId);
-        return users.stream()
+        teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("Team not found: " + teamId));
+        return userRepository.findByTeam_Id(teamId).stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -59,21 +42,21 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse updateUserActivity(UUID userId, UpdateUserActivityRequest request) {
-        User user = userRepository.findById(userId)
+    public UserResponse updateUserActivity(String userId, Boolean active) {
+        UUID uuid = UUID.fromString(userId);
+        User user = userRepository.findById(uuid)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
-
-        user.setActive(request.isActive());
+        user.setActive(active);
         User saved = userRepository.save(user);
         return mapToResponse(saved);
     }
 
     private UserResponse mapToResponse(User user) {
         return UserResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .isActive(user.isActive())
-                .teamId(user.getTeam().getId())
+                .userId(user.getId().toString())
+                .username(user.getName())
+                .teamName(user.getTeam().getName())
+                .active(user.isActive())
                 .build();
     }
 }
