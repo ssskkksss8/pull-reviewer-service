@@ -98,11 +98,15 @@ public class PullRequestService {
                 .map(a -> a.getReviewer().getId())
                 .collect(Collectors.toSet());
 
+        UUID authorId = pr.getAuthor().getId();
+
         List<User> candidates = userRepository.findByTeam_Id(teamId).stream()
                 .filter(User::isActive)
                 .filter(u -> !u.getId().equals(oldReviewerId))
+                .filter(u -> !u.getId().equals(authorId))
                 .filter(u -> !alreadyAssignedIds.contains(u.getId()))
                 .toList();
+
 
         if (candidates.isEmpty()) {
             throw new IllegalStateException("No available candidates in reviewer's team for reassignment");
@@ -133,6 +137,13 @@ public class PullRequestService {
         return prById.values().stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    public PullRequestResponse getById(UUID id) {
+        PullRequest pr = pullRequestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("PR not found: " + id));
+
+        return mapToResponse(pr);
     }
 
 

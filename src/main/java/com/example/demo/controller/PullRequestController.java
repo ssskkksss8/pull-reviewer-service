@@ -38,4 +38,10 @@ public class PullRequestController {
     public java.util.List<PullRequestResponse> findForReviewer(@PathVariable UUID userId) {
         return pullRequestService.getPullRequestsForReviewer(userId);
     }
+
+    @GetMapping("/{id}")
+    public PullRequestResponse getById(@PathVariable UUID id) {
+        return pullRequestService.getById(id);
+    }
+
 }
